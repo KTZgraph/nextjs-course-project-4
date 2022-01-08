@@ -1,6 +1,22 @@
 // ZAWSZE ustawiać res dla NIeudanych i Udanych akcji
 import { MongoClient } from "mongodb";
 
+async function connectDatabase() {
+  // popmocnicza
+  const client = await MongoClient.connect(
+    "url do bazy"
+  );
+
+  return client;
+}
+
+async function insertDocument(client, document) {
+  //pomocnicza
+  const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
+
+  await db.collection("newsletter").insertOne(document); //zwraca promisa
+}
+
 async function handler(req, res) {
   //handlery mogą być asynchroniczne a troche latwiej potem z mongodb pracowac
   if (req.method === "POST") {
@@ -14,14 +30,26 @@ async function handler(req, res) {
       res.status(422).json({ message: "Invalid email address." });
       return; //cancel function execution
     }
+    let client;
 
-    const client = await MongoClient.connect(
-      "url do bazy events"
-    );
-    const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
+    try {
+      client = await connectDatabase();
+    } catch (error) {
+      res.status(500).json({message: 'Connecting to the database failed!'})
+      return; // żeby zapobiec dalszemu wykonywaniu kodu
+    }
 
-    await db.collection("newsletter").insertOne({ email: userEmail }); //zwraca promisa
-    client.close();
+    try {
+      await insertDocument(client, { email: userEmail });
+      client.close(); // żeby też próbował zamknąć połaczenie
+
+    } catch (error) {
+      res.status(500).json({message: 'Inserting data failed'})
+      return; // żeby zapobiec dalszemu wykonywaniu kodu
+    } finally {
+      client.close(); // żeby też próbował zamknąć połaczenie
+
+    }
 
     console.log(userEmail);
     // HTTP 201 success resource was added
