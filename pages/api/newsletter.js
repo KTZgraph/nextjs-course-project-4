@@ -16,11 +16,11 @@ async function handler(req, res) {
     }
 
     const client = await MongoClient.connect(
-      "url do mobngodb"
+      "url do bazy events"
     );
     const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
 
-    await db.collection("emails").insertOne({ email: userEmail }); //zwraca promisa
+    await db.collection("newsletter").insertOne({ email: userEmail }); //zwraca promisa
     client.close();
 
     console.log(userEmail);
