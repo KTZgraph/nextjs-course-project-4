@@ -29,11 +29,13 @@ function handler(req, res) {
   }
 
   if (req.method === "GET") {
+    console.log("TUUUUUUUUU")
     //   lista komentarzy
     const dummyList = [
       { id: "c1", name: "Max", text: "A first comment" },
       { id: "c2", name: "Manuel", text: "A second comment" },
     ];
+    console.log( dummyList)
     res.status(201).json({comments: dummyList});
   }
 
