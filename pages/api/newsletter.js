@@ -19,21 +19,23 @@ async function handler(req, res) {
 
     try {
       client = await connectDatabase();
+          console.log(userEmail)
     } catch (error) {
       res.status(500).json({message: 'Connecting to the database failed!'})
       return; // żeby zapobiec dalszemu wykonywaniu kodu
     }
 
     try {
-      await insertDocument(client, { email: userEmail });
+      await insertDocument(client, 'newsletters', { email: userEmail });
       client.close(); // żeby też próbował zamknąć połaczenie
+
+      console.log(userEmail)
+
 
     } catch (error) {
+      console.log(error.message)
       res.status(500).json({message: 'Inserting data failed'})
       return; // żeby zapobiec dalszemu wykonywaniu kodu
-    } finally {
-      client.close(); // żeby też próbował zamknąć połaczenie
-
     }
 
     console.log(userEmail);
