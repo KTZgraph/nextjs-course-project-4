@@ -1,21 +1,6 @@
 // ZAWSZE ustawiać res dla NIeudanych i Udanych akcji
-import { MongoClient } from "mongodb";
+import {connectDatabase, insertDocument} from '../../helpers/db-util'
 
-async function connectDatabase() {
-  // popmocnicza
-  const client = await MongoClient.connect(
-    "url do bazy"
-  );
-
-  return client;
-}
-
-async function insertDocument(client, document) {
-  //pomocnicza
-  const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
-
-  await db.collection("newsletter").insertOne(document); //zwraca promisa
-}
 
 async function handler(req, res) {
   //handlery mogą być asynchroniczne a troche latwiej potem z mongodb pracowac

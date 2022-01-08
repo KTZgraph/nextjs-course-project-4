@@ -1,15 +1,23 @@
 // /api/comments/some-event-id wiecej sensu w takiej ścieżce
-import { MongoClient } from "mongodb";
-import { getAllDocuments } from "../../../helpers/db-utils";
+import {
+  connectDatabase,
+  insertDocument,
+  getAllDocuments,
+} from "../../../helpers/db-util";
+
 async function handler(req, res) {
   //trzeba wiedzieć dla którego eventu dodaję/pobieram komentarze
 
   const eventId = req.query.eventId; //eventId z nazwy pliku [eventId].js
 
   //połaczenie z bazą danych
-  const client = await MongoClient.connect(
-    "url do bazy events"
-  );
+  let client;
+  try {
+    client = await connectDatabase();
+  } catch (error) {
+    res.status(500).json({ message: "Connecting to the database failed" });
+    return;
+  }
 
   if (req.method === "POST") {
     //add serwer-side validation, NIE można UFAĆ walidacji po stronie klienta!
@@ -23,6 +31,7 @@ async function handler(req, res) {
       text.trim() === ""
     ) {
       res.status(422).json({ message: "Invalid input" });
+      client.close(); // zamknąc bazę gdy nieprawidłowy input
       return;
     }
     const newComment = {
@@ -33,37 +42,34 @@ async function handler(req, res) {
       eventId, //żeby mieć referencję do którego eventu ten komentarz należy
     };
 
-    const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
-
-    const result = await db.collection("comments").insertOne(newComment); //zwraca promisa gdzi ejest Id stworzonego obiektu [insertedId]
-    console.log(result); //result zwraca
-
-    //możemy dodać id do obiektu
-    newComment.id = result.insertedId;
-
-    res.status(201).json({ message: "Added comment.", comment: newComment });
+    let result;
+    try {
+      result = await insertDocument(client, "comments", newComment);
+      newComment._id = result.insertedId; //możemy dodać id do obiektu, można dac _id żeby być jak mongoDB
+      res.status(201).json({ message: "Added comment.", comment: newComment });
+    } catch (error) {
+      res.status(500).json({ message: "Inserting comment failed" });
+      //pewnosć że na dole będzie client.close()
+    }
   }
 
   if (req.method === "GET") {
     //   lista komentarzy
-    const db = client.db();
-    // const documents = await db
-    //   .collection("comments")
-    //   .find()
-    //   .sort({ _id: -1 }) // sortowanie po id czyli od najmłodszych
-    //   .toArray(); //domyslnie wszystkie zwraca ale zwraca obiekt cusos gdzie manualnie trzeba szukac danych po dokumentach
+    try {
+      const documents = await getAllDocuments(
+        // metoda z pomocniczych TERAZ POBIERA KOMENTARZE TYLKO DLA TEGO wydarzenia
+        client,
+        "comments",
+        { _id: -1 }, //od najnowyszch komentarzy
+        { eventId: eventId }
+      );
 
-    // metoda z pomocniczych TERAZ POBIERA KOMENTARZE TYLKO DLA TEGO wydarzenia
-    const documents = await getAllDocuments(
-      db,
-      "comments",
-      { _id: -1 },
-      { eventId: eventId }
-    );
-    console.log("\n\n\n\n\n\n\n");
-    console.log(documents);
-
-    res.status(201).json({ comments: documents });
+      res.status(201).json({ comments: documents });
+    } catch (error) {
+      // ta zwrotka ciągle się powtarza wiec można zrobić soobną funckję która takie rzeczy ma
+      res.status(500).json("Getting comments failed.");
+      //bex return żeby na pewno się zamknięło połaczenie
+    }
   }
 
   // pamietać o zamykaniu połaczenia z bazą
