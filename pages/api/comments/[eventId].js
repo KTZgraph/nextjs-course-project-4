@@ -1,6 +1,6 @@
 // /api/comments/some-event-id wiecej sensu w takiej ścieżce
 import { MongoClient } from "mongodb";
-
+import { getAllDocuments } from "../../../helpers/db-utils";
 async function handler(req, res) {
   //trzeba wiedzieć dla którego eventu dodaję/pobieram komentarze
 
@@ -47,11 +47,21 @@ async function handler(req, res) {
   if (req.method === "GET") {
     //   lista komentarzy
     const db = client.db();
-    const documents = await db
-      .collection("comments")
-      .find()
-      .sort({ _id: -1 }) // sortowanie po id czyli od najmłodszych
-      .toArray(); //domyslnie wszystkie zwraca ale zwraca obiekt cusos gdzie manualnie trzeba szukac danych po dokumentach
+    // const documents = await db
+    //   .collection("comments")
+    //   .find()
+    //   .sort({ _id: -1 }) // sortowanie po id czyli od najmłodszych
+    //   .toArray(); //domyslnie wszystkie zwraca ale zwraca obiekt cusos gdzie manualnie trzeba szukac danych po dokumentach
+
+    // metoda z pomocniczych TERAZ POBIERA KOMENTARZE TYLKO DLA TEGO wydarzenia
+    const documents = await getAllDocuments(
+      db,
+      "comments",
+      { _id: -1 },
+      { eventId: eventId }
+    );
+    console.log("\n\n\n\n\n\n\n");
+    console.log(documents);
 
     res.status(201).json({ comments: documents });
   }

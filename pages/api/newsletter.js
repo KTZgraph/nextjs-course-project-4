@@ -16,7 +16,7 @@ async function handler(req, res) {
     }
 
     const client = await MongoClient.connect(
-        "url do bazy events"
+      "url do bazy events"
     );
     const db = client.db(); //nie trzeb apodawać nazwy bazy bo jest już ona w connecting string
 
