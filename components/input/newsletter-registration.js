@@ -28,7 +28,7 @@ function NewsletterRegistration() {
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    })/*********************** LOGIKA OBSLUGI BLEDU ******************************* */
       .then((response) => {
         // trzeba rozbudować, bo kod 500 albo 422 nie spowoduję wywołania błedu obłsuigawanego przeze mnie w catch
         if (response.ok) {

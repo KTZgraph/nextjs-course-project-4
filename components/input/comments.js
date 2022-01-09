@@ -1,25 +1,28 @@
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 
 import CommentList from "./comment-list";
 import NewComment from "./new-comment";
 import classes from "./comments.module.css";
+import NotificationContext from "../../store/notification-context";
 
 function Comments(props) {
   const { eventId } = props;
+
+  const notificationCtx = useContext(NotificationContext);
 
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
 
   useEffect(() => {
     if (showComments) {
-      fetch('/api/comments/' + eventId, {
-        headers : { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-         }
+      fetch("/api/comments/" + eventId, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
       })
-        .then((response) => response.json() )
-        .then(data => setComments(data.comments));
+        .then((response) => response.json())
+        .then((data) => setComments(data.comments));
     }
   }, [showComments]);
 
@@ -32,17 +35,52 @@ function Comments(props) {
     // }
   }
 
-  function addCommentHandler(commentData) {
+  function addCommentHandler(commentData) {//tutaj mozna się zastanowaić na używaniem custum hooks/refaktorem
     // dodawanie nowego komentarza
+
+    // ustwienie notyfikacji przed realnym dodawaniem do bazy przez API
+    notificationCtx.showNotification({
+      title: "Sending comment...",
+      message: "Your coment is currently being stored into a database",
+      status: "pendind",
+    });
+
     fetch("/api/comments/" + eventId, {
       method: "POST",
       body: JSON.stringify(commentData),
       headers: {
         "Content-Type": "application/json",
       },
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data));
+    }) /*********************** LOGIKA OBSLUGI BLEDU ******************************* */
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        //wiem że mam błąd wiec go rzucam, potrzebuję zagnieżdzonego promista bo fetch jest asynchroniczny- nie zwracam response.json()
+        // zwracam cały nested Promise chain, to spowoduje ze główny promise chain z fetch zakończy się błędem
+        return response.json().then((data) => {
+          console.log("data");
+          console.log(data);
+
+          throw new Error(data.message || "Something went wrong");
+        });
+      })
+      .then((data) => {
+        // tu wiem, że udało się dodac komentarz
+        notificationCtx.showNotification({
+          title: "Success!",
+          message: "Your coment was saved!",
+          status: "success",
+        });
+      })
+      .catch((error) => {
+        // łapanie blędu w łancuchu promisów
+        notificationCtx.showNotification({
+          title: "Error!",
+          message: error.message || "Something went wrong",
+          status: "error",
+        });
+      });
   }
 
   return (
