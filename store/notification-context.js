@@ -1,3 +1,4 @@
+// identycznie jak w Reacie, nic specyficznego w Nextjs, Redux też by działał w podobny sposób, ale daje to lepszy user effect stąd notyfikacje
 import { createContext, useState, useEffect } from "react";
 
 const NotificationContext = createContext({
