@@ -12,9 +12,12 @@ function Comments(props) {
 
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
+  const [isFetchingComments, setIsFetchingComments] = useState(false); //local state, domyslnie false bo komentarze schowane
 
   useEffect(() => {
+    // można dodac obsługę błędów
     if (showComments) {
+      setIsFetchingComments(true); //bo teraz ładuję dane
       fetch("/api/comments/" + eventId, {
         headers: {
           "Content-Type": "application/json",
@@ -22,7 +25,10 @@ function Comments(props) {
         },
       })
         .then((response) => response.json())
-        .then((data) => setComments(data.comments));
+        .then((data) => {
+          setComments(data.comments);
+          setIsFetchingComments(false); //już dane się pobrały
+        });
     }
   }, [showComments]);
 
@@ -35,7 +41,8 @@ function Comments(props) {
     // }
   }
 
-  function addCommentHandler(commentData) {//tutaj mozna się zastanowaić na używaniem custum hooks/refaktorem
+  function addCommentHandler(commentData) {
+    //tutaj mozna się zastanowaić na używaniem custum hooks/refaktorem
     // dodawanie nowego komentarza
 
     // ustwienie notyfikacji przed realnym dodawaniem do bazy przez API
@@ -89,8 +96,11 @@ function Comments(props) {
         {showComments ? "Hide" : "Show"} Comments
       </button>
       {showComments && <NewComment onAddComment={addCommentHandler} />}
-      {showComments && <CommentList items={comments} />}
+      
       {/* CommentList items={comments} przekazanie listy komentarzy POBRANYCH TUTAJ do innego komponenru */}
+      {showComments && !isFetchingComments && <CommentList items={comments} />}
+      {/* spinner gdy dane sie jeszcze pobierają */}
+      {showComments && isFetchingComments && <p>Loading...</p>}
     </section>
   );
 }
